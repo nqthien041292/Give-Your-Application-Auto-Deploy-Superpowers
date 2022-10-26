@@ -162,6 +162,15 @@ jobs:
             BACKEND_PUBLIC_IP=$(aws --region us-east-1 ec2 describe-instances --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" --query 'Reservations[*].Instances[*].PublicDnsName' --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
             cat .circleci/ansible/inventory.txt
+      - run:
+          name: Save the new back-end url to memory using kvdb.io
+          command: |
+            backend_url=$(aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text)
+            
+            curl https://kvdb.io/JaNS7yE2XcWLry9nmvQzPr/backend_url_{CIRCLE_WORKFLOW_ID:0:7}  -d "http://${backend_url}:3030"
       - persist_to_workspace:
           root: ~/
           paths:
@@ -239,39 +248,53 @@ jobs:
     docker:
       - image: amazon/aws-cli
     steps:
-      # Checkout code from git
-      - run:
-          name: Install dependencies
-          command: |
-            # your code here
+      - checkout
+      - attach_workspace:
+          at: /root
       - run:
           name: Get backend url
           command: |
-            # your code here
-            export API_URL="http://${BACKEND_IP}:3030"
+            API_URL=$(curl --insecure https://kvdb.io/JaNS7yE2XcWLry9nmvQzPr/backend_url_{CIRCLE_WORKFLOW_ID:0:7})
+            echo $API_URL
             echo "${API_URL}"
+            echo "NODE_ENV=production" >> frontend/production.env
+            echo "API_URL=${API_URL}" >> frontend/production.env
+            cat frontend/.env
       - run:
           name: Deploy frontend objects
+          working_directory: ./frontend
           command: |
-            # your code here
-            # Here's where you will add some code to rollback on failure      
+            npm i
+            npm run build
+            ls -l
+            aws s3 cp ./dist "s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7}" --recursive
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   deploy-backend:
     docker:
-      - image: cimg/python:3.7-node
+      - image: python:3.7-alpine3.11
     steps:
-      # Checkout code from git
-      # Add ssh keys with fingerprint
-      # attach workspace
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["de:f4:eb:7f:79:09:e0:84:ef:34:64:3c:10:0f:e8:97"]
+      - attach_workspace:
+          at: /root
       - run:
           name: Install dependencies
           command: |
-            # your code here
+            apk add --update ansible rsync 
+            apk add curl
+            pip3 install awscli
       - run:
           name: Deploy backend
           command: |
-            # your code here
-      # Here's where you will add some code to rollback on failure
+            ls /root
+            ls /root/project/backend/
+            cat ~/project/.circleci/ansible/inventory.txt
+            ansible-playbook -i ~/project/.circleci/ansible/inventory.txt ~/project/.circleci/ansible/deploy-backend.yml
+      - destroy-environment:
+          workflow-id: ${CIRCLE_WORKFLOW_ID:0:7}
 
   smoke-test:
     docker:
