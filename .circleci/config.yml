@@ -32,7 +32,7 @@ commands:
             if (( $SUCCESS == 1 ));
             then
               cd ~/project/backend
-              npm install
+              npm install --force
               npm run migration:revert
             fi
 
