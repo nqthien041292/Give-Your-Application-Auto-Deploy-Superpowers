@@ -181,11 +181,7 @@ jobs:
             --query 'Reservations[*].Instances[*].PublicIpAddress' \
             --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --output text)
-            curl -H "Content-Type: text/plain" \
-            -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" \
-            --request PUT \
-            --data "http://${backend_url}:3030" \
-            https://api.memstash.io/values/backend_url
+            curl https://kvdb.io/JaNS7yE2XcWLry9nmvQzPr/backend_url_${CIRCLE_WORKFLOW_ID:0:7}  -d "http://${backend_url}:3030"
       - persist_to_workspace:
           root: ~/
           paths:
