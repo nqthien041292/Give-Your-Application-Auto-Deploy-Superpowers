@@ -229,7 +229,7 @@ jobs:
       - run:
           name: Send migration results to kvdb.io
           command: |
-            cat ./migration_status.txt
+            cat migration_status.txt
             echo "has been done successfully" > ./migration_status.txt
             pwd && ls -al
             if grep -q "has been done successfully" ./migration_status.txt 
