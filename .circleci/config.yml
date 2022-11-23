@@ -30,8 +30,7 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS=$(curl -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" \
-            --request GET https://api.memstash.io/values/DB_MIGRATION_<< parameters.workflow_id >>)
+            SUCCESS=$(curl --insecure https://kvdb.io/JaNS7yE2XcWLry9nmvQzPr/migration_${CIRCLE_WORKFLOW_ID:0:7})
             if(( $SUCCESS==1 )); 
             then
             cd backend
@@ -342,17 +341,16 @@ jobs:
           command: |
             ls 
             pwd
-            export backend_url=$(curl -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" \
-            --request GET https://api.memstash.io/values/backend_url)
+            export backend_url=$(curl --insecure https://kvdb.io/JaNS7yE2XcWLry9nmvQzPr/backend_url_${CIRCLE_WORKFLOW_ID:0:7})
             echo $backend_url
-            # curl "$backend_url/api/status"
+            curl "$backend_url/api/status"
       - run:
           name: Frontend smoke test.
           command: |
             URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com"
             if curl -s ${URL} | grep "Welcome"
             then
-              return 0
+              return 1
             else
               return 1
             fi
@@ -372,7 +370,7 @@ jobs:
             WorkflowID=$(aws cloudformation \
             list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
             --no-paginate --output text)
-            curl -H "Content-Type: text/plain" -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" --request PUT --data "$WorkflowID" https://api.memstash.io/values/workflowid
+            curl https://kvdb.io/JaNS7yE2XcWLry9nmvQzPr/WorkflowID_${CIRCLE_WORKFLOW_ID:0:7}  -d "$WorkflowID"
       - run:
           name: Update cloudfront distribution
           command: |
@@ -395,7 +393,7 @@ jobs:
       - run:
           name: Remove old stacks and files
           command: |
-            OldWorkflowID=$(curl -H "token: ecdfc255-81e1-4056-9efa-2d7fa10812e1" --request GET https://api.memstash.io/values/workflowid)
+            OldWorkflowID=$(curl --insecure https://kvdb.io/JaNS7yE2XcWLry9nmvQzPr/WorkflowID_${CIRCLE_WORKFLOW_ID:0:7})
             CurrentWorkflowID=${CIRCLE_WORKFLOW_ID:0:7}
             if [[ $OldWorkflowID == "" ]]
             then
