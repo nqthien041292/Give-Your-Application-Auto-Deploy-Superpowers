@@ -1,3 +1,3 @@
 [URL01] https://github.com/nqthien041292/Give-Your-Application-Auto-Deploy-Superpowers
-[URL02] https://udapeople-95469d5.s3.amazonaws.com
-[URL03] http://d3mc4a3kmgxpwx.cloudfront.net/
+[URL02] http://udapeople-36159b4.s3.amazonaws.com/index.html#/employees
+[URL03] http://dydgs9av4gns0.cloudfront.net/
